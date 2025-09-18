@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة Flappy Bird - إصدار متقدم</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        canvas {
+            border: 3px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        .ui-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .hacks {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+        
+        .hack-btn {
+            background: linear-gradient(45deg, #9b59b6, #e74c3c);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            font-size: 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.8;
+        }
+        
+        .hack-btn:hover {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        
+        .hack-btn.active {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            animation: glow 1s infinite alternate;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #2ecc71; }
+            100% { box-shadow: 0 0 20px #2ecc71, 0 0 30px #2ecc71; }
+        }
+        
+        .controls {
+            margin-top: 15px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .shop-overlay, .level-select-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .shop-content, .level-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .shop-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .item-info {
+            text-align: right;
+        }
+        
+        .item-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .buy-btn {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .buy-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .buy-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .close-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .level-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            margin: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        
+        .level-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .level-btn.locked {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 20px;
+            display: none;
+        }
+        
+        .menu-btns {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .menu-btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .menu-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="ui-panel">
+            <div class="stats">
+                <div>النقاط: <span id="score">0</span></div>
+                <div>الكوينز: <span id="coins">0</span> 🪙</div>
+                <div>المستوى: <span id="level">1</span></div>
+            </div>
+            <div class="hacks">
+                <button class="hack-btn" id="godModeBtn" onclick="toggleGodMode()">🛡️ الوضع الآمن</button>
+                <button class="hack-btn" id="slowTimeBtn" onclick="toggleSlowTime()">⏰ بطء الزمن</button>
+                <button class="hack-btn" id="coinMagnetBtn" onclick="toggleCoinMagnet()">🧲 مغناطيس الكوينز</button>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div class="controls">
+            🐦 اضغط مفتاح المسافة أو انقر للطيران! 🐦<br>
+            <small>⭐ اجمع الكوينز واشتر من المتجر لتحصل على الهاكس! ⭐</small>
+        </div>
+        <div class="menu-btns">
+            <button class="menu-btn" onclick="showShop()">🛒 المتجر</button>
+            <button class="menu-btn" onclick="showLevelSelect()">🎯 اختيار المستوى</button>
+            <button class="menu-btn" onclick="resetProgress()">🔄 إعادة تعيين</button>
+        </div>
+        
+        <!-- نافذة انتهاء اللعبة -->
+        <div class="game-over" id="gameOver">
+            <h2>انتهت اللعبة! 💥</h2>
+            <p>النقاط: <span id="finalScore">0</span></p>
+            <p>الكوينز المجمعة: <span id="coinsEarned">0</span> 🪙</p>
+            <button class="menu-btn" onclick="restartGame()">العب مرة أخرى 🎮</button>
+        </div>
+    </div>
+
+    <!-- نافذة المتجر -->
+    <div class="shop-overlay" id="shopOverlay">
+        <div class="shop-content">
+            <h2>🛒 متجر التحسينات</h2>
+            <p>الكوينز المتاحة: <span id="shopCoins">0</span> 🪙</p>
+            
+            <div class="shop-item">
+                <div class="item-info">
+                    <h3>🛡️ الوضع الآمن الدائم</h3>
+                    <p>لا تموت أبداً! (استخدام لا محدود)</p>
+                    <div class="item-price">500 🪙</div>
+                </div>
+                <button class="buy-btn" onclick="buyItem('godModePermanent', 500)" id="buyGodMode">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="item-info">
+                    <h3>⏰ قوة بطء الزمن</h3>
+                    <p>بطء الزمن لمدة 15 ثانية! (استخدام لا محدود)</p>
+                    <div class="item-price">350 🪙</div>
+                </div>
+                <button class="buy-btn" onclick="buyItem('slowTimePower', 350)" id="buySlowTime">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="item-info">
+                    <h3>🧲 مغناطيس كوينز قوي</h3>
+                    <p>جذب قوي + كوينز مضاعفة + استخدام لا محدود</p>
+                    <div class="item-price">400 🪙</div>
+                </div>
+                <button class="buy-btn" onclick="buyItem('superMagnet', 400)" id="buySuperMagnet">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="item-info">
+                    <h3>⚡ نقاط مضاعفة</h3>
+                    <p>احصل على ضعف النقاط من الأنابيب!</p>
+                    <div class="item-price">300 🪙</div>
+                </div>
+                <button class="buy-btn" onclick="buyItem('doublePoints', 300)" id="buyDoublePoints">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="item-info">
+                    <h3>🎨 طائر ذهبي</h3>
+                    <p>شكل أنيق + 50% كوينز إضافية من كل عملة</p>
+                    <div class="item-price">250 🪙</div>
+                </div>
+                <button class="buy-btn" onclick="buyItem('goldenBird', 250)" id="buyGoldenBird">شراء</button>
+            </div>
+            
+            <button class="close-btn" onclick="closeShop()">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- نافذة اختيار المستوى -->
+    <div class="level-select-overlay" id="levelSelectOverlay">
+        <div class="level-content">
+            <h2>🎯 اختيار المستوى</h2>
+            <div id="levelButtons">
+                <!-- سيتم إنشاؤها ديناميكياً -->
+            </div>
+            <button class="close-btn" onclick="closeLevelSelect()">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const coinsElement = document.getElementById('coins');
+        const levelElement = document.getElementById('level');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const coinsEarnedElement = document.getElementById('coinsEarned');
+
+        // متغيرات اللعبة
+        let gameRunning = false;
+        let gameStarted = false;
+        let score = 0;
+        let totalCoins = parseInt(localStorage.getItem('totalCoins') || '0');
+        let currentLevel = 1;
+        let coinsThisRound = 0;
+        
+        // الهاكس
+        let godMode = false;
+        let slowTime = false;
+        let coinMagnet = false;
+        let godModeTimer = 0;
+        let slowTimeTimer = 0;
+        let coinMagnetTimer = 0;
+        
+        // التحسينات المشتراة
+        let upgrades = JSON.parse(localStorage.getItem('upgrades') || '{}');
+        let unlockedLevels = parseInt(localStorage.getItem('unlockedLevels') || '1');
+        
+        // العد التنازلي
+        let countdown = 0;
+        let countdownActive = false;
+        
+        // الطائر
+        const bird = {
+            x: 80,
+            y: canvas.height / 2,
+            radius: 20,
+            velocity: 0,
+            gravity: 0.4,
+            jumpForce: -8,
+            color: upgrades.goldenBird ? '#FFD700' : '#FF6B6B'
+        };
+
+        // الأنابيب والكوينز
+        let pipes = [];
+        let coins = [];
+        const pipeWidth = 60;
+        let pipeGap = 180;
+        let pipeSpeed = 1.5;
+
+        // الألوان
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+
+        // مستويات اللعبة مع شروط واضحة
+        const levels = {
+            1: { gap: 200, speed: 1.0, name: "مبتدئ", requirement: "ابدأ اللعب!" },
+            2: { gap: 180, speed: 1.3, name: "متوسط", requirement: "توصل لـ 20 نقطة في المستوى 1" },
+            3: { gap: 160, speed: 1.6, name: "صعب", requirement: "توصل لـ 35 نقطة في المستوى 2" },
+            4: { gap: 140, speed: 2.0, name: "خبير", requirement: "توصل لـ 50 نقطة في المستوى 3" },
+            5: { gap: 120, speed: 2.5, name: "مستحيل", requirement: "توصل لـ 70 نقطة في المستوى 4" }
+        };
+
+        // الأصوات
+        const sounds = { jump: null, coin: null, gameOver: null, countdown: null };
+        let audioContext;
+        
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                createSounds();
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        function createSounds() {
+            sounds.jump = createBeep(300, 0.1, 'sine');
+            sounds.coin = createBeep(800, 0.2, 'square');
+            sounds.gameOver = createBeep(150, 0.5, 'sawtooth');
+            sounds.countdown = createBeep(600, 0.3, 'triangle');
+        }
+        
+        function createBeep(frequency, duration, waveType = 'sine') {
+            return () => {
+                if (!audioContext) return;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = frequency;
+                oscillator.type = waveType;
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            };
+        }
+        
+        function playSound(soundName) {
+            if (sounds[soundName]) {
+                try { sounds[soundName](); } catch (e) {}
+            }
+        }
+
+        // إنشاء الكائنات
+        function createPipe() {
+            const minHeight = 50;
+            const maxHeight = canvas.height - pipeGap - minHeight;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            return {
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: topHeight + pipeGap,
+                bottomHeight: canvas.height - (topHeight + pipeGap),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                passed: false
+            };
+        }
+
+        function createCoin() {
+            return {
+                x: canvas.width + Math.random() * 200,
+                y: Math.random() * (canvas.height - 200) + 100,
+                radius: 15,
+                collected: false,
+                rotation: 0,
+                pulseScale: 1
+            };
+        }
+
+        // رسم الكائنات
+        function drawBird() {
+            ctx.save();
+            ctx.translate(bird.x, bird.y);
+            
+            // تأثير الوضع الآمن
+            if (godMode) {
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 20;
+            }
+            
+            ctx.fillStyle = bird.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // العين
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(-5, -5, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // المنقار
+            ctx.fillStyle = '#FF6B00';
+            ctx.beginPath();
+            ctx.moveTo(15, 0);
+            ctx.lineTo(25, -5);
+            ctx.lineTo(25, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // الجناح
+            ctx.fillStyle = upgrades.goldenBird ? '#FFB347' : '#FF8C8C';
+            ctx.beginPath();
+            ctx.ellipse(-8, 2, 12, 8, Math.PI * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawPipes() {
+            pipes.forEach(pipe => {
+                const gradient1 = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeWidth, 0);
+                gradient1.addColorStop(0, pipe.color);
+                gradient1.addColorStop(1, adjustColor(pipe.color, -30));
+                
+                ctx.fillStyle = gradient1;
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                
+                const gradient2 = ctx.createLinearGradient(pipe.x, pipe.bottomY, pipe.x + pipeWidth, canvas.height);
+                gradient2.addColorStop(0, pipe.color);
+                gradient2.addColorStop(1, adjustColor(pipe.color, -30));
+                
+                ctx.fillStyle = gradient2;
+                ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, pipe.bottomHeight);
+                
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                ctx.strokeRect(pipe.x, pipe.bottomY, pipeWidth, pipe.bottomHeight);
+                
+                ctx.fillStyle = adjustColor(pipe.color, 20);
+                ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, pipeWidth + 10, 30);
+                ctx.fillRect(pipe.x - 5, pipe.bottomY, pipeWidth + 10, 30);
+                
+                ctx.strokeRect(pipe.x - 5, pipe.topHeight - 30, pipeWidth + 10, 30);
+                ctx.strokeRect(pipe.x - 5, pipe.bottomY, pipeWidth + 10, 30);
+            });
+        }
+
+        function drawCoins() {
+            coins.forEach(coin => {
+                if (coin.collected) return;
+                
+                ctx.save();
+                ctx.translate(coin.x, coin.y);
+                ctx.rotate(coin.rotation);
+                ctx.scale(coin.pulseScale, coin.pulseScale);
+                
+                // تأثير مغناطيس الكوينز
+                if (coinMagnet || upgrades.superMagnet) {
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 15;
+                }
+                
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coin.radius);
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(0.7, '#FFA500');
+                gradient.addColorStop(1, '#FF8C00');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, coin.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#B8860B';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#B8860B';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('★', 0, 0);
+                
+                ctx.restore();
+            });
+        }
+
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawClouds();
+            
+            // تأثيرات الهاكس
+            if (slowTime) {
+                ctx.fillStyle = 'rgba(0, 0, 255, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            drawCloud(100, 80, 40);
+            drawCloud(300, 120, 35);
+            drawCloud(200, 50, 45);
+        }
+
+        function drawCloud(x, y, size) {
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.6, y, size * 0.8, 0, Math.PI * 2);
+            ctx.arc(x + size * 1.2, y, size, 0, Math.PI * 2);
+            ctx.arc(x + size * 1.8, y, size * 0.8, 0, Math.PI * 2);
+            ctx.arc(x + size * 2.4, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function adjustColor(color, amount) {
+            const usePound = color[0] === '#';
+            color = color.slice(usePound ? 1 : 0);
+            const num = parseInt(color, 16);
+            let r = (num >> 16) + amount;
+            let b = (num >> 8 & 0x00FF) + amount;
+            let g = (num & 0x0000FF) + amount;
+            r = r > 255 ? 255 : r < 0 ? 0 : r;
+            b = b > 255 ? 255 : b < 0 ? 0 : b;
+            g = g > 255 ? 255 : g < 0 ? 0 : g;
+            return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16);
+        }
+
+        // فحص التصادم - الوضع الآمن يعمل فقط مع الترقية المشتراة
+        function checkCollision() {
+            if (godMode && upgrades.godModePermanent) return false;
+            
+            if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) {
+                return true;
+            }
+            
+            for (let pipe of pipes) {
+                if (bird.x + bird.radius > pipe.x && 
+                    bird.x - bird.radius < pipe.x + pipeWidth) {
+                    if (bird.y - bird.radius < pipe.topHeight || 
+                        bird.y + bird.radius > pipe.bottomY) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        // تحديث اللعبة
+        function update() {
+            if (!gameRunning) return;
+            
+            const currentSpeed = slowTime ? pipeSpeed * 0.5 : pipeSpeed;
+            const gravityMultiplier = slowTime ? 0.5 : 1;
+            
+            bird.velocity += bird.gravity * gravityMultiplier;
+            bird.y += bird.velocity * gravityMultiplier;
+            
+            // تحديث مؤقتات الهاكس
+            if (godModeTimer > 0) {
+                godModeTimer--;
+                if (godModeTimer === 0) {
+                    godMode = false;
+                    const btn = document.getElementById('godModeBtn');
+                    btn.classList.remove('active');
+                    btn.textContent = '🛡️ الوضع الآمن';
+                }
+            }
+            
+            if (slowTimeTimer > 0) {
+                slowTimeTimer--;
+                if (slowTimeTimer === 0) {
+                    slowTime = false;
+                    const btn = document.getElementById('slowTimeBtn');
+                    btn.classList.remove('active');
+                    btn.textContent = '⏰ بطء الزمن';
+                }
+            }
+            
+            if (coinMagnetTimer > 0) {
+                coinMagnetTimer--;
+                if (coinMagnetTimer === 0) {
+                    coinMagnet = false;
+                    const btn = document.getElementById('coinMagnetBtn');
+                    btn.classList.remove('active');
+                    btn.textContent = '🧲 مغناطيس الكوينز';
+                }
+            }
+            
+            // تحديث الأنابيب
+            pipes.forEach((pipe, index) => {
+                pipe.x -= currentSpeed;
+                
+                if (!pipe.passed && bird.x > pipe.x + pipeWidth) {
+                    pipe.passed = true;
+                    let pointsEarned = 1;
+                    if (upgrades.doublePoints) pointsEarned *= 2;
+                    score += pointsEarned;
+                    scoreElement.textContent = score;
+                }
+                
+                if (pipe.x + pipeWidth < 0) {
+                    pipes.splice(index, 1);
+                }
+            });
+            
+            // تحديث الكوينز
+            coins.forEach((coin, index) => {
+                if (coin.collected) return;
+                
+                coin.x -= currentSpeed;
+                coin.rotation += 0.1;
+                coin.pulseScale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+                
+                // مغناطيس الكوينز
+                if (coinMagnet || upgrades.superMagnet) {
+                    const dx = bird.x - coin.x;
+                    const dy = bird.y - coin.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const magnetRange = upgrades.superMagnet ? 100 : 60;
+                    
+                    if (distance < magnetRange) {
+                        coin.x += dx * 0.1;
+                        coin.y += dy * 0.1;
+                    }
+                }
+                
+                const dx = bird.x - coin.x;
+                const dy = bird.y - coin.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // تطبيق مكافآت الطائر الذهبي
+                if (distance < bird.radius + coin.radius) {
+                    coin.collected = true;
+                    let coinsEarned = 1;
+                    if (upgrades.superMagnet) coinsEarned *= 2;
+                    if (upgrades.goldenBird) coinsEarned = Math.ceil(coinsEarned * 1.5); // 50% إضافي
+                    
+                    totalCoins += coinsEarned;
+                    coinsThisRound += coinsEarned;
+                    score += 5;
+                    scoreElement.textContent = score;
+                    coinsElement.textContent = totalCoins;
+                    playSound('coin');
+                    saveProgress();
+                }
+                
+                if (coin.x + coin.radius < 0) {
+                    coins.splice(index, 1);
+                }
+            });
+            
+            // إضافة أنابيب جديدة
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+                pipes.push(createPipe());
+            }
+            
+            // إضافة كوينز جديدة
+            if (Math.random() < 0.015) {
+                coins.push(createCoin());
+            }
+            
+            if (checkCollision()) {
+                gameOver();
+            }
+        }
+
+        // رسم كل شيء
+        function draw() {
+            drawBackground();
+            drawPipes();
+            drawCoins();
+            drawBird();
+        }
+
+        // حلقة اللعبة
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!gameStarted && !countdownActive) {
+                draw();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('اضغط مفتاح المسافة للبدء!', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('🐦', canvas.width / 2, canvas.height / 2 + 40);
+            } else if (countdownActive) {
+                draw();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 80px Arial';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                
+                if (countdown > 0) {
+                    ctx.strokeText(countdown.toString(), canvas.width / 2, canvas.height / 2);
+                    ctx.fillText(countdown.toString(), canvas.width / 2, canvas.height / 2);
+                } else {
+                    ctx.strokeText('ابدأ!', canvas.width / 2, canvas.height / 2);
+                    ctx.fillText('ابدأ!', canvas.width / 2, canvas.height / 2);
+                }
+                
+                ctx.font = '20px Arial';
+                ctx.fillStyle = 'white';
+                ctx.fillText('استعد...', canvas.width / 2, canvas.height / 2 + 60);
+            } else {
+                update();
+                draw();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // الهاكس - كلها مقفولة حتى الشراء من المتجر
+        function toggleGodMode() {
+            if (!audioContext) initAudio();
+            
+            if (upgrades.godModePermanent) {
+                godMode = !godMode;
+                const btn = document.getElementById('godModeBtn');
+                if (godMode) {
+                    btn.classList.add('active');
+                    btn.textContent = '🛡️ مُفعّل!';
+                    alert('تم تفعيل الوضع الآمن الدائم! 🛡️');
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = '🛡️ الوضع الآمن';
+                }
+            } else {
+                alert('🔒 يجب شراء "الوضع الآمن الدائم" من المتجر أولاً!\nالسعر: 500 كوين 💰');
+                showShop();
+            }
+        }
+
+        function toggleSlowTime() {
+            if (!audioContext) initAudio();
+            
+            if (upgrades.slowTimePower) {
+                slowTime = !slowTime;
+                const btn = document.getElementById('slowTimeBtn');
+                if (slowTime) {
+                    slowTimeTimer = 900; // 15 ثانية
+                    btn.classList.add('active');
+                    btn.textContent = '⏰ مُفعّل!';
+                    alert('تم تفعيل قوة بطء الزمن! ⏰');
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = '⏰ بطء الزمن';
+                }
+            } else {
+                alert('🔒 يجب شراء "قوة بطء الزمن" من المتجر أولاً!\nالسعر: 350 كوين 💰');
+                showShop();
+            }
+        }
+
+        function toggleCoinMagnet() {
+            if (!audioContext) initAudio();
+            
+            if (upgrades.superMagnet) {
+                coinMagnet = !coinMagnet;
+                const btn = document.getElementById('coinMagnetBtn');
+                if (coinMagnet) {
+                    coinMagnetTimer = 1800; // 30 ثانية
+                    btn.classList.add('active');
+                    btn.textContent = '🧲 مُفعّل!';
+                    alert('تم تفعيل مغناطيس الكوينز القوي! 🧲');
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = '🧲 مغناطيس الكوينز';
+                }
+            } else {
+                alert('🔒 يجب شراء "مغناطيس الكوينز القوي" من المتجر أولاً!\nالسعر: 400 كوين 💰');
+                showShop();
+            }
+        }
+
+        // وظائف اللعبة الأساسية
+        function jump() {
+            if (!gameStarted && !countdownActive) {
+                startGame();
+            } else if (gameRunning) {
+                bird.velocity = bird.jumpForce;
+                playSound('jump');
+            }
+        }
+
+        function startGame() {
+            if (!audioContext) initAudio();
+            
+            countdownActive = true;
+            countdown = 3;
+            gameOverElement.style.display = 'none';
+            coinsThisRound = 0;
+            
+            // تطبيق إعدادات المستوى
+            const levelConfig = levels[currentLevel];
+            pipeGap = levelConfig.gap;
+            pipeSpeed = levelConfig.speed;
+            
+            const countdownInterval = setInterval(() => {
+                playSound('countdown');
+                countdown--;
+                if (countdown === 0) {
+                    clearInterval(countdownInterval);
+                    countdownActive = false;
+                    gameStarted = true;
+                    gameRunning = true;
+                    bird.y = canvas.height / 2;
+                    bird.velocity = 0;
+                    pipes = [];
+                    coins = [];
+                    pipes.push(createPipe());
+                    score = 0;
+                    scoreElement.textContent = score;
+                }
+            }, 600);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            coinsEarnedElement.textContent = coinsThisRound;
+            gameOverElement.style.display = 'block';
+            playSound('gameOver');
+            
+            // نظام فتح المستويات بناءً على الأداء الفعلي مع رسائل واضحة
+            let levelUnlocked = false;
+            
+            // شروط فتح المستويات مع رسائل واضحة
+            if (currentLevel === 1 && score >= 20 && unlockedLevels === 1) {
+                unlockedLevels = 2;
+                levelUnlocked = true;
+                alert(`🎉 ممتاز! وصلت لـ ${score} نقطة في المستوى 1!\n🔓 تم فتح المستوى 2: متوسط`);
+            } else if (currentLevel === 2 && score >= 35 && unlockedLevels === 2) {
+                unlockedLevels = 3;
+                levelUnlocked = true;
+                alert(`🔥 رائع! وصلت لـ ${score} نقطة في المستوى 2!\n🔓 تم فتح المستوى 3: صعب`);
+            } else if (currentLevel === 3 && score >= 50 && unlockedLevels === 3) {
+                unlockedLevels = 4;
+                levelUnlocked = true;
+                alert(`⚡ لا يُصدق! وصلت لـ ${score} نقطة في المستوى 3!\n🔓 تم فتح المستوى 4: خبير`);
+            } else if (currentLevel === 4 && score >= 70 && unlockedLevels === 4) {
+                unlockedLevels = 5;
+                levelUnlocked = true;
+                alert(`🏆 أسطوري! وصلت لـ ${score} نقطة في المستوى 4!\n🔓 تم فتح المستوى النهائي: مستحيل!`);
+            }
+            
+            // رسائل تشجيعية إذا لم يفتح المستوى
+            if (!levelUnlocked && currentLevel < 5) {
+                const nextLevel = currentLevel + 1;
+                const requiredScore = [0, 20, 35, 50, 70][nextLevel - 1];
+                if (score < requiredScore) {
+                    setTimeout(() => {
+                        alert(`💪 تحتاج ${requiredScore - score} نقطة إضافية لفتح المستوى ${nextLevel}!\nالمطلوب: ${requiredScore} نقطة في المستوى ${currentLevel}`);
+                    }, 1500);
+                }
+            }
+            
+            if (levelUnlocked) {
+                saveProgress();
+            }
+            
+            // مكافآت الكوينز بناءً على الأداء
+            let bonusCoins = 0;
+            if (score >= 5) bonusCoins += 2;
+            if (score >= 15) bonusCoins += 5;
+            if (score >= 30) bonusCoins += 10;
+            if (score >= 50) bonusCoins += 15;
+            if (score >= 75) bonusCoins += 25;
+            
+            if (bonusCoins > 0) {
+                totalCoins += bonusCoins;
+                coinsElement.textContent = totalCoins;
+                saveProgress();
+                setTimeout(() => {
+                    alert(`💰 مكافأة الأداء: ${bonusCoins} كوين إضافي!\n💳 إجمالي الكوينز: ${totalCoins}`);
+                }, 2000);
+            }
+        }
+
+        function restartGame() {
+            gameStarted = false;
+            gameRunning = false;
+            countdownActive = false;
+            countdown = 0;
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            pipes = [];
+            coins = [];
+            score = 0;
+            scoreElement.textContent = score;
+            gameOverElement.style.display = 'none';
+            
+            // إعادة تعيين نصوص الأزرار إذا انتهت مدة الهاكس
+            if (godModeTimer === 0) {
+                document.getElementById('godModeBtn').classList.remove('active');
+                document.getElementById('godModeBtn').textContent = '🛡️ الوضع الآمن';
+            }
+            if (slowTimeTimer === 0) {
+                document.getElementById('slowTimeBtn').classList.remove('active');
+                document.getElementById('slowTimeBtn').textContent = '⏰ بطء الزمن';
+            }
+            if (coinMagnetTimer === 0) {
+                document.getElementById('coinMagnetBtn').classList.remove('active');
+                document.getElementById('coinMagnetBtn').textContent = '🧲 مغناطيس الكوينز';
+            }
+        }
+
+        // وظائف المتجر
+        function showShop() {
+            document.getElementById('shopCoins').textContent = totalCoins;
+            document.getElementById('shopOverlay').style.display = 'flex';
+            updateShopButtons();
+        }
+
+        function closeShop() {
+            document.getElementById('shopOverlay').style.display = 'none';
+        }
+
+        function buyItem(itemType, price) {
+            if (totalCoins >= price && !upgrades[itemType]) {
+                totalCoins -= price;
+                upgrades[itemType] = true;
+                coinsElement.textContent = totalCoins;
+                saveProgress();
+                updateShopButtons();
+                
+                // تطبيق التحسين فوراً
+                if (itemType === 'goldenBird') {
+                    bird.color = '#FFD700';
+                }
+                
+                alert('تم الشراء بنجاح! 🎉');
+            } else if (upgrades[itemType]) {
+                alert('لقد اشتريت هذا العنصر مسبقاً!');
+            } else {
+                alert('لا تملك كوينز كافية!');
+            }
+        }
+
+        function updateShopButtons() {
+            const items = ['godModePermanent', 'slowTimePower', 'superMagnet', 'doublePoints', 'goldenBird'];
+            const prices = [500, 350, 400, 300, 250];
+            
+            items.forEach((item, index) => {
+                const btn = document.querySelectorAll('.buy-btn')[index];
+                if (upgrades[item]) {
+                    btn.textContent = 'مُشترى ✅';
+                    btn.disabled = true;
+                    btn.style.background = '#27ae60';
+                } else if (totalCoins < prices[index]) {
+                    btn.disabled = true;
+                    btn.textContent = `تحتاج ${prices[index] - totalCoins} كوين`;
+                    btn.style.background = '#e74c3c';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = 'شراء';
+                    btn.style.background = 'linear-gradient(45deg, #4ECDC4, #44A08D)';
+                }
+            });
+        }
+
+        // وظائف اختيار المستوى
+        function showLevelSelect() {
+            document.getElementById('levelSelectOverlay').style.display = 'flex';
+            createLevelButtons();
+        }
+
+        function closeLevelSelect() {
+            document.getElementById('levelSelectOverlay').style.display = 'none';
+        }
+
+        function createLevelButtons() {
+            const container = document.getElementById('levelButtons');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.innerHTML = `
+                    <div>المستوى ${i} - ${levels[i].name}</div>
+                    <small>${levels[i].requirement}</small>
+                `;
+                
+                if (i <= unlockedLevels) {
+                    btn.onclick = () => selectLevel(i);
+                    if (i === currentLevel) {
+                        btn.style.background = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+                    }
+                } else {
+                    btn.classList.add('locked');
+                    btn.innerHTML += '<div>🔒</div>';
+                }
+                
+                container.appendChild(btn);
+            }
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+            levelElement.textContent = currentLevel;
+            closeLevelSelect();
+            restartGame();
+        }
+
+        // وظائف الحفظ والتحميل
+        function saveProgress() {
+            localStorage.setItem('totalCoins', totalCoins.toString());
+            localStorage.setItem('upgrades', JSON.stringify(upgrades));
+            localStorage.setItem('unlockedLevels', unlockedLevels.toString());
+        }
+
+        function resetProgress() {
+            if (confirm('هل أنت متأكد من إعادة تعيين كل التقدم؟')) {
+                localStorage.clear();
+                totalCoins = 0;
+                upgrades = {};
+                unlockedLevels = 1;
+                currentLevel = 1;
+                bird.color = '#FF6B6B';
+                coinsElement.textContent = totalCoins;
+                levelElement.textContent = currentLevel;
+                restartGame();
+            }
+        }
+
+        // تحديث واجهة المستخدم
+        function updateUI() {
+            coinsElement.textContent = totalCoins;
+            levelElement.textContent = currentLevel;
+        }
+
+        // حذف كل وظائف الاختبار المجانية
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                jump();
+            }
+            // لا توجد اختصارات مجانية - يجب اللعب وجمع الكوينز!
+        });
+
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+
+        // تشغيل اللعبة
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>
